@@ -1,0 +1,103 @@
+<script>
+    var popups = [],
+        pumpPopup,
+        last = {},
+        hoseLeft, hoseRight,
+        lastHeight;
+
+    function launch() {
+        var i, popup,
+            width, height,
+            left, top;
+
+        width = 300;
+        height = 300;
+
+        for (i = 0; i < 3; i ++) {
+            left = Math.random()*(screen.width-width);
+            top = Math.random()*(screen.height-height);
+
+            popup = window.open('popup.html', 'popup'+i, 'width='+width+',height='+height+',left='+left+',top='+top)
+            popups.push(popup);
+        }
+
+        width = 300;
+        height = 500;
+        left = (screen.width-width)/2;
+        top = (screen.height-height)/2;
+
+        pumpPopup = window.open('pump.html', 'pump', 'width='+width+',height='+height+',left='+left+',top='+top)
+    }
+
+    function close() {
+        popups.forEach(function (popup) {
+            popup.close();
+        });
+
+        if (pumpPopup) pumpPopup.close();
+    }
+
+    function loop() {
+        var ppWidth, ppHeight, ppLeft, ppTop,
+            lPoint, rPoint,
+            testPoints,
+            leftCollision = false,
+            rightCollision = false,
+            height;
+
+        if (pumpPopup && pumpPopup.hoseLeft && pumpPopup.hoseRight) {
+            selected = [];
+
+            ppWidth = pumpPopup.outerWidth;
+            ppHeight = pumpPopup.outerHeight;
+            ppLeft = pumpPopup.screenLeft;
+            ppTop = pumpPopup.screenTop;
+
+            lPoint = [ppLeft, ppTop+ppHeight-100];
+            rPoint = [ppLeft+ppWidth, ppTop+ppHeight-100];
+
+            popups.forEach(function (popup) {
+                var pTop = popup.screenTop,
+                    pLeft = popup.screenLeft,
+                    pBottom = pTop + popup.outerHeight,
+                    pRight = pLeft + popup.outerWidth;
+
+                if (lPoint[0] > pLeft && lPoint[0] < pRight && lPoint[1] > pTop && lPoint[1] < pBottom) {
+                    if (selected.indexOf(popup) == -1) {
+                        selected.push(popup);
+                        leftCollision = true;
+                    }
+                }
+
+                if (rPoint[0] > pLeft && rPoint[0] < pRight && rPoint[1] > pTop && rPoint[1] < pBottom) {
+                    if (selected.indexOf(popup) == -1) {
+                        selected.push(popup);
+                        rightCollision = true;
+                    }
+                }
+            });
+
+            pumpPopup.hoseLeft.className = leftCollision ? 'hose open' : 'hose';
+            pumpPopup.hoseRight.className = rightCollision ? 'hose open' : 'hose';
+
+            height = pumpPopup.outerHeight;
+            if (height < lastHeight) {
+                selected.forEach(function (popup) {
+                    popup.pump((lastHeight - height) / 4);
+                });
+            }
+            lastHeight = height;
+        }
+
+        setTimeout(loop, 1000/10);
+    }
+    
+    window.addEventListener('load', function () {
+        document.getElementById('launch-button').addEventListener('click', launch);
+        document.getElementById('close-button').addEventListener('click', close);
+
+        loop();
+    });
+</script>
+<button id="launch-button">launch</button>
+<button id="close-button">close</button>
